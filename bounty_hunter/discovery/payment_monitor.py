@@ -8,12 +8,12 @@ logger = logging.getLogger(__name__)
 
 # Fallback RPC endpoints
 ETH_RPCS = [
-    "https://eth.llamarpc.com",
+    
     "https://rpc.ankr.com/eth",
     "https://ethereum.publicnode.com",
 ]
 BASE_RPCS = [
-    "https://base.llamarpc.com",
+    "https://base.publicnode.com",
     "https://rpc.ankr.com/base",
     "https://base.publicnode.com",
 ]
@@ -75,7 +75,7 @@ class PaymentMonitor:
             logger.warning(f"[payment] {chain} check error: {e}")
 
     async def run_forever(self, interval: int = 1000):
-        logger.info("💰 Payment monitor started (interval: 5min)")
+        logger.info("💰 Payment monitor started (interval: 15min)")
         while True:
             await self.check_evm_payments("eth")
             await self.check_evm_payments("base")

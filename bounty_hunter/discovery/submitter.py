@@ -21,7 +21,7 @@ class BountySubmitter:
         try:
             resp = await client.chat.completions.create(
                 model="gpt-4o",
-                max_tokens=400,
+                max_tokens=1500,
                 messages=[{
                     "role": "system",
                     "content": 'You are a strict quality auditor. Return JSON: {"approved": true/false, "score": 0-100, "reason": "...", "improvements": "..."}'
@@ -76,7 +76,7 @@ class BountySubmitter:
         agent = GPT4oAgent()
 
         # Audit με retry loop (max 5 φορές)
-        MAX_RETRIES = 5
+        MAX_RETRIES = 3
         best_work = work
         best_score = 0
         approved = False
@@ -90,7 +90,7 @@ class BountySubmitter:
                 best_score = score
                 best_work = work
 
-            if score >= 80:  # require high quality
+            if score >= 70:  # require high quality
                 approved = True
                 logger.info(f"[submitter] ✅ Approved on attempt {attempt}!")
                 break
@@ -114,21 +114,29 @@ class BountySubmitter:
 
         # Submit
         submitted = False
+
         if bounty.source == "github" and bounty.url and "github.com" in bounty.url:
             submitted = await self.submit_github(bounty, work)
-        elif bounty.source == "superteam" and bounty.external_id:
-            from .scrapers.superteam_submitter import SuperteamSubmitter
-            st = SuperteamSubmitter()
-            submitted = await st.submit(bounty.external_id, bounty.title, work, bounty.reward_usd or 0)
-            if not submitted:
-                self._save_for_manual(bounty, work, audit)
+
+        elif bounty.source == "superteam_agent" and bounty.external_id:
+            from .scrapers.superteam_agent import SuperteamAgentSubmitter
+            st = SuperteamAgentSubmitter()
+            submitted = await st.submit(bounty.external_id, bounty.url.split("/")[-1], work)
+            if submitted:
+                logger.info(f"[submitter] ✅ Auto-submitted to Superteam Agent API")
+            else:
+                filepath = self._save_for_manual(bounty, work, audit)
+                await self._notify_manual(bounty, filepath)
+                submitted = True
+
         else:
-            self._save_for_manual(bounty, work, audit)
+            filepath = self._save_for_manual(bounty, work, audit)
+            await self._notify_manual(bounty, filepath)
             submitted = True
 
         if submitted:
             await self.queue.update_status(bounty.uid, BountyStatus.SUBMITTED)
-            logger.info(f"[submitter] ✅ Done: {bounty.title[:50]} | ${bounty.reward_usd}")
+            logger.info(f"[submitter] ✅  Done: {bounty.title[:50]} | ${bounty.reward_usd}")
         return submitted
 
     def _save_rejected(self, bounty, work, audit):
@@ -141,7 +149,43 @@ class BountySubmitter:
         f = f"/root/bounty_submissions/manual/{bounty.uid[:8]}.json"
         json.dump({"title": bounty.title, "url": bounty.url, "reward": bounty.reward_usd, "audit": audit, "work": work}, open(f, "w"), indent=2)
         import subprocess
+        subprocess.Popen(
+            ["bash", "-c", "cd /root/bounty_hunter && git add discovery/ && git commit -m 'submission: " + bounty.title[:40].replace("'","") + "' && git push origin main"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        import subprocess
         subprocess.Popen(["git", "-C", "/root/bounty_hunter", "add", "-A"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.Popen(["git", "-C", "/root/bounty_hunter", "commit", "-m", f"submission: {bounty.title[:50]}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         subprocess.Popen(["git", "-C", "/root/bounty_hunter", "push", "origin", "main"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         logger.info(f"[submitter] 💾 Saved: {f}")
+        return f
+
+    async def _notify_manual(self, bounty, filepath):
+        try:
+            from .notifier import DiscordNotifier
+            notifier = DiscordNotifier()
+            filename = os.path.basename(filepath)
+            msg = (
+                f"📋 **Manual Submission Needed**\n"
+                f"**{bounty.title}**\n"
+                f"💰 ${bounty.reward_usd} | 🔗 {bounty.url}\n"
+                f"📁 File: `{filepath}`"
+            )
+            await notifier.send(msg)
+        except Exception as e:
+            logger.error(f"[notify] Discord error: {e}")
+
+    async def _notify_manual(self, bounty, filepath):
+        try:
+            from .notifier import DiscordNotifier
+            notifier = DiscordNotifier()
+            filename = os.path.basename(filepath)
+            msg = (
+                f"📋 **Manual Submission Needed**\n"
+                f"**{bounty.title}**\n"
+                f"💰 ${bounty.reward_usd} | 🔗 {bounty.url}\n"
+                f"📁 File: `{filepath}`"
+            )
+            await notifier.send(msg)
+        except Exception as e:
+            logger.error(f"[notify] Discord error: {e}")

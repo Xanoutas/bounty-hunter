@@ -6,6 +6,7 @@ from .scrapers.gitcoin import GitcoinScraper
 from .scrapers.github_scraper import GitHubScraper
 from .scrapers.immunefi import ImmunefiScraper
 from .scrapers.superteam import SuperteamScraper
+from .scrapers.superteam_agent import SuperteamAgentScraper
 from .scrapers.dework import DeworkScraper
 from .scrapers.questbook import QuestbookScraper
 from .scrapers.layer3 import Layer3Scraper
@@ -20,15 +21,16 @@ class DiscoveryOrchestrator:
         self.scrapers = []
 
     def _init_scrapers(self):
-        github_token = os.environ.get("GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN") or "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"
+        github_token = os.environ.get("GITHUB_TOKEN", "")
         neynar_key = os.environ.get("NEYNAR_API_KEY", "")
         logger.info(f"GitHub token: {'YES' if github_token else 'NO'}")
         self.scrapers = [
             BountyCasterScraper(neynar_key),
+            SuperteamAgentScraper(),
             # GitcoinScraper(),  # API dead
             GitHubScraper(github_token),
             # ImmunefiScraper(),  # API changed
-            # SuperteamScraper(),  # Disabled: 3 submissions/month limit
+            SuperteamScraper(),
             DeworkScraper(),
             # QuestbookScraper(),  # API dead
             Layer3Scraper(),

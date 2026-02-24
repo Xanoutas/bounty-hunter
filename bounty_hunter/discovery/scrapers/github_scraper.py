@@ -9,21 +9,17 @@ from .base import BaseScraper
 logger = logging.getLogger(__name__)
 
 WEB3_ORGS = [
-    "ethereum",
     "gitcoinco",
-    "uniswap",
-    "aave",
-    "compound-finance",
-    "OpenZeppelin",
+    "ethereum",
 ]
 
 def get_labels() -> list:
     import json
     try:
         with open("/root/bounty_hunter/keywords.json") as f:
-            return json.load(f).get("keywords", ["bounty", "funded", "grant", "reward"])[:15]
+            return json.load(f).get("keywords", ["bounty", "funded", "grant", "reward"])[:5]
     except:
-        return ["bounty", "Bounty", "funded", "grant", "reward"]
+        return ["bounty", "funded", "reward"]
 
 class GitHubScraper(BaseScraper):
     SOURCE_NAME = "github"

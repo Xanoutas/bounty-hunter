@@ -10,6 +10,8 @@ from .submitter import BountySubmitter
 from .notifier import DiscordNotifier
 from .payment_monitor import PaymentMonitor
 from .farcaster_poster import FarcasterPoster
+from .daily_digest import run_forever as digest_forever
+from .github_commenter import GitHubCommenter
 from .keyword_updater import run_forever as keyword_updater_loop
 # from .akash_bidder import AkashBidder
 
@@ -20,11 +22,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-MIN_SCORE = 20
+MIN_SCORE = 60
 MIN_REWARD = 5
 MAX_REWARD = 600
 
 async def process_bounty(bounty, agent, submitter, notifier):
+    # Skip low reward before AI call
+    if (bounty.reward_usd or 0) < MIN_REWARD:
+        logger.info(f"⏭️  Reward ${bounty.reward_usd or 0} < MIN_REWARD, skipping")
+        return
     title = bounty.title[:60]
     logger.info(f"🔍 Analyzing: {title}")
 
@@ -107,7 +113,7 @@ async def run():
         orchestrator.run_forever(),
         pipeline_loop(),
         payment_monitor.run_forever(),
-        keyword_updater_loop(),
+        # keyword_updater_loop(),  # disabled
         # AkashBidder().run_forever(),  # Disabled - runs separately
     )
 

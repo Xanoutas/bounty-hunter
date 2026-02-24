@@ -54,6 +54,9 @@ class BountyCasterScraper(BaseScraper):
                         continue
                     seen.add(hash_)
                     text = cast.get("text", "")
+                    if cast.get("author", {}).get("username", "") == "xanoutas11":
+                        continue
+
                     if any(s in text.lower() for s in ["chung daily note", "memecoin", "meme coin", "degen alert", "just launched", "airdrop", "solarax", "new coin alert", "token just dropped", "0 taxes"]): continue
                     reward_usd, token = self._extract_reward(text)
                     # Find URL from embeds

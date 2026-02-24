@@ -8,14 +8,15 @@ logger = logging.getLogger(__name__)
 class GPT4oAgent:
     def __init__(self):
         self.client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
-        self.model = "gpt-4o"
+        self.model = "gpt-4o-mini"
+        self.strong_model = "gpt-4o"
 
     async def analyze_bounty(self, title: str, description: str) -> dict:
         """Αναλύει αν αξίζει να πάρουμε το bounty."""
         try:
             resp = await self.client.chat.completions.create(
                 model=self.model,
-                max_tokens=500,
+                max_tokens=800,
                 messages=[{
                     "role": "system",
                     "content": """You are a Web3 bounty hunter running on a CPU-only server (no GPU).
@@ -58,8 +59,8 @@ Score >60 means pursue. Target max reward $500. Prefer tasks completable in <3 h
         """Παράγει την εργασία για το bounty."""
         try:
             resp = await self.client.chat.completions.create(
-                model=self.model,
-                max_tokens=2000,
+                model=self.strong_model,
+                max_tokens=3000,
                 messages=[{
                     "role": "system",
                     "content": """You are an expert Web3 developer and security researcher. 
@@ -87,7 +88,7 @@ Provide complete, professional output ready for submission."""
         try:
             resp = await self.client.chat.completions.create(
                 model=self.model,
-                max_tokens=300,
+                max_tokens=800,
                 messages=[{
                     "role": "system",
                     "content": "Review if the work meets the bounty requirements. Return JSON: {\"approved\": true/false, \"quality_score\": 0-100, \"feedback\": \"brief feedback\"}"

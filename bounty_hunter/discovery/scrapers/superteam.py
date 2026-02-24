@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class SuperteamScraper(BaseScraper):
     SOURCE_NAME = "superteam"
     RATE_LIMIT_SECONDS = 2.0
-    API_URL = "https://earn.superteam.fun/api/listings/?type=bounty&status=open&take=50"
+    API_URL = "https://superteam.fun/api/listings?type=bounty&status=open&take=50"
 
     async def fetch(self) -> AsyncIterator[Bounty]:
         try:
@@ -21,7 +21,7 @@ class SuperteamScraper(BaseScraper):
                         external_id=str(item.get("id", "")),
                         title=item.get("title", ""),
                         description=item.get("description", ""),
-                        url=f"https://earn.superteam.fun/listings/bounties/{item.get('slug','')}",
+                        url=f"https://superteam.fun/listings/bounties/{item.get('slug','')}",
                         reward_usd=float(item.get("rewardAmount", 0) or 0),
                         reward_token=item.get("token", "USDC"),
                         category=BountyCategory.OTHER,

@@ -87,11 +87,17 @@ class FarcasterPoster:
 
         if not work:
             return False
+        # Φίλτρο reward $5-$600
+        if reward < 5 or reward > 600:
+            logger.info(f"[farcaster] Skipping ${reward} (out of range $5-$600)")
+            self.posted.add(file_id)
+            self._save_posted()
+            return False
 
         logger.info(f"[farcaster] Posting: {title} (${reward})")
 
         # Πρώτο cast — intro
-        intro = f"🎯 Bounty Submission: {title}\n\n💰 Reward: ${reward:.0f}\n\n🔗 {url}"
+        intro = f"🎯 Bounty Submission: {title}\n\n💰 Reward: ${reward:.0f}\n\n🔗 {url}\n\n⬇️ My submission:"
         first_hash = await self.post_cast(intro)
         if not first_hash:
             return False
