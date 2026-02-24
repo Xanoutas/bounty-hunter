@@ -162,29 +162,20 @@ class BountySubmitter:
 
     async def _notify_manual(self, bounty, filepath):
         try:
+            import subprocess
+            filename = os.path.basename(filepath)
+            subprocess.run(["git", "-C", "/root/bounty_submissions", "add", "-A"], capture_output=True)
+            subprocess.run(["git", "-C", "/root/bounty_submissions", "commit", "-m", f"submission: {bounty.title[:50]}"], capture_output=True)
+            subprocess.run(["git", "-C", "/root/bounty_submissions", "push", "origin", "main"], capture_output=True)
+            github_url = f"https://github.com/Xanoutas/bounty-hunter/blob/main/bounty_submissions/manual/{filename}"
             from .notifier import DiscordNotifier
             notifier = DiscordNotifier()
-            filename = os.path.basename(filepath)
             msg = (
                 f"📋 **Manual Submission Needed**\n"
                 f"**{bounty.title}**\n"
                 f"💰 ${bounty.reward_usd} | 🔗 {bounty.url}\n"
-                f"📁 File: `{filepath}`"
-            )
-            await notifier.send(msg)
-        except Exception as e:
-            logger.error(f"[notify] Discord error: {e}")
-
-    async def _notify_manual(self, bounty, filepath):
-        try:
-            from .notifier import DiscordNotifier
-            notifier = DiscordNotifier()
-            filename = os.path.basename(filepath)
-            msg = (
-                f"📋 **Manual Submission Needed**\n"
-                f"**{bounty.title}**\n"
-                f"💰 ${bounty.reward_usd} | 🔗 {bounty.url}\n"
-                f"📁 File: `{filepath}`"
+                f"📁 `{filename}`\n"
+                f"🐙 {github_url}"
             )
             await notifier.send(msg)
         except Exception as e:

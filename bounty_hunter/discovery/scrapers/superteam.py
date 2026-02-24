@@ -21,7 +21,7 @@ class SuperteamScraper(BaseScraper):
                         external_id=str(item.get("id", "")),
                         title=item.get("title", ""),
                         description=item.get("description", ""),
-                        url=f"https://superteam.fun/listings/bounties/{item.get('slug','')}",
+                        url=f"https://superteam.fun/earn/listing/{item.get('slug','')}",
                         reward_usd=float(item.get("rewardAmount", 0) or 0),
                         reward_token=item.get("token", "USDC"),
                         category=BountyCategory.OTHER,
