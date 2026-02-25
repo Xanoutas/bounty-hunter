@@ -123,6 +123,7 @@ class BountyQueueManager:
         )
         # Φόρτωσε προηγούμενα seen UIDs στο bloom filter
         await self._restore_bloom()
+        await self._restore_heap()
         logger.info("BountyQueueManager connected to Redis.")
 
     async def disconnect(self):
@@ -138,6 +139,28 @@ class BountyQueueManager:
             logger.info(f"Restored {len(members)} UIDs to Bloom Filter.")
         except Exception as e:
             logger.warning(f"Could not restore bloom filter: {e}")
+
+
+    async def _restore_heap(self):
+        """Φορτώνει τα unprocessed bounties από Redis στο heap μετά από restart."""
+        try:
+            keys = await self._redis.keys("bounty:*")
+            count = 0
+            for key in keys:
+                status = await self._redis.hget(key, "status")
+                if status == "new":
+                    data = await self._redis.hget(key, "data")
+                    if data:
+                        import json
+                        from .models.bounty import Bounty  # relative import fix
+                        d = json.loads(data)
+                        bounty = Bounty(**{k: v for k, v in d.items() if k in Bounty.__dataclass_fields__})
+                        heapq.heappush(self._priority_heap, PrioritizedBounty.from_bounty(bounty))
+                        count += 1
+            if count:
+                logger.info(f"Restored {count} pending bounties to heap.")
+        except Exception as e:
+            logger.warning(f"Could not restore heap: {e}")
 
     async def push(self, bounty: Bounty) -> bool:
         """

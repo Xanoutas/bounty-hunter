@@ -75,7 +75,13 @@ Title: {title}
 Description: {description[:1500]}
 Suggested approach: {approach}
 
-Provide complete, professional output ready for submission."""
+Provide complete output ready for submission.
+CRITICAL RULES:
+- Do NOT start with "Sure," or "Here is" or any meta-commentary
+- Do NOT end with explanations about what you wrote
+- Do NOT use placeholder text like [Your Name] or [Date]
+- Write as if YOU are the human submitting this
+- For Twitter threads: write raw tweets only, numbered, no intro/outro"""
                 }]
             )
             return resp.choices[0].message.content
